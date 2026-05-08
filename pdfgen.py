@@ -16,10 +16,6 @@ CYRILLIC_MAP = {
 
 
 def transliterate(text):
-    """Transliterate Cyrillic characters to Latin equivalents.
-    The pdfme library only supports WinAnsiEncoding (Latin-1), so
-    any non-Latin characters would cause a KeyError in font width lookup.
-    """
     return ''.join(CYRILLIC_MAP.get(c, c) for c in text)
 
 
@@ -33,21 +29,12 @@ def randomize_doc_name():
 
 
 def gen_File(name, email, event_name, date, vip=False, seat=None):
-    """Generate a PDF ticket file with event information.
-
-    Parameters:
-    - name, email, event_name, date: ticket fields
-    - vip (bool): if True, use the VIP template
-    - seat (str|None): optional seat or pass level
-    """
     file_name = randomize_doc_name()
 
-    # Transliterate to avoid KeyError from non-Latin chars in Helvetica font
     name = transliterate(name)
     event_name = transliterate(event_name)
     email = transliterate(email)
 
-    # Build content differently for VIP vs regular tickets
     if vip:
         content = [
             {".": f"{event_name}", "style": {"s": 28, "b": True, "align": "center", "margin_top": 6}},
@@ -61,7 +48,6 @@ def gen_File(name, email, event_name, date, vip=False, seat=None):
             {".": "ADMIT ONE - VIP", "style": {"s": 10, "align": "center", "c": 0.6, "margin_top": 12}},
             {".": "Present this pass at the VIP entrance.", "style": {"s": 9, "align": "center", "c": 0.5, "margin_top": 8}},
         ]
-        # slightly tighter margins for VIP-style card look
         page_style = {"page_size": "a4", "margin": [40, 40]}
     else:
         content = [
@@ -78,5 +64,5 @@ def gen_File(name, email, event_name, date, vip=False, seat=None):
         "sections": [{"content": content}],
     }
 
-    with open(file_name, 'wb') as f:
+    with open("./tickets/" + file_name, 'wb') as f:
         build_pdf(document, f)
