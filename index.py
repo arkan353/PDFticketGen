@@ -10,7 +10,7 @@ import random
 import pdf_server
 
 
-pdf_server.run_server()
+
 
 class RegistrationEvent(BaseModel):
     registration_id: str = str(uuid.uuid4())
@@ -60,7 +60,6 @@ def callback(ch, method, properties, body):
 
 def main():
     try:
-        # Подключаемся к RabbitMQ
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host='localhost',
@@ -71,30 +70,23 @@ def main():
         )
         channel = connection.channel()
         
-        # Объявляем exchange (должен совпадать с издателем)
         channel.exchange_declare(
             exchange='event_topic_exchange',
             exchange_type='topic',
             durable=True
         )
-        
-        # Создаем временную очередь с уникальным именем
-        # exclusive=True - очередь удалится при отключении
-        # auto_delete=True - очередь удалится, когда отключатся все потребители
+
         result = channel.queue_declare(
-            queue='',  # Пустая строка = генерируем уникальное имя
+            queue='', 
             exclusive=True,
             auto_delete=True
         )
         queue_name = result.method.queue
         
-        # Привязываем очередь к exchange с нужными routing keys
-        # Можно привязаться к нескольким ключам или использовать wildcard
+
         routing_keys = [
-            'event.registered.vip',      # Только VIP регистрации
-            'event.registered.regular',  # Только обычные регистрации
-            # 'event.registered.*',      # Все регистрации (wildcard)
-            # 'event.#',                 # Все события (включая вложенные)
+            'event.registered.vip',     
+            'event.registered.regular',  
         ]
         
         for routing_key in routing_keys:
@@ -108,14 +100,14 @@ def main():
         print(f"\n🎧 Ожидание сообщений в очереди: {queue_name}")
         print("📋 Нажмите CTRL+C для выхода\n")
         
-        # Настраиваем обработчик сообщений
+
         channel.basic_consume(
             queue=queue_name,
             on_message_callback=callback,
-            auto_ack=False  # Ручное подтверждение для надежности
+            auto_ack=False  
         )
         
-        # Запускаем цикл обработки
+
         channel.start_consuming()
         
     except KeyboardInterrupt:
@@ -133,4 +125,8 @@ def main():
             connection.close()
 
 if __name__ == '__main__':
+    import threading
+    server_thread = threading.Thread(target=pdf_server.run_server, daemon=True)
+    server_thread.start()
+    print("🌐 PDF сервер запущен на http://localhost:8080")
     main()

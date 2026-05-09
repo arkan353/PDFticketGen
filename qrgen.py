@@ -1,7 +1,6 @@
 import qrcode
 import base64
 import datetime
-import pdf_server
 import os
 
 def gen_qr_via_endpoint(ticket_id):
